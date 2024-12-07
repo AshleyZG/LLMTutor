@@ -1,0 +1,86 @@
+{
+  "name": "llmtutor",
+  "displayName": "LLMTutor",
+  "description": "This is a virtual tutor for students, which could provide both proactive and reactive feedback.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "llmtutor.proactiveMode",
+        "title": "Proactive Mode",
+        "icon": "$(comment)"
+      },
+      {
+        "command": "llmtutor.promptQuestion",
+        "title": "Prompt Question"
+      },
+      {
+        "command": "extension.showQuestions",
+        "title": "Show Questions"
+      },
+      {
+        "command": "llmtutor.toggleActivation",
+        "title": "Toggle Activation"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "llmtutor.proactiveMode",
+          "group": "navigation"
+        }
+      ]
+    },
+    "chatParticipants": [
+      {
+        "id": "chat-tutorial.code-tutor",
+        "fullName": "Code Tutor",
+        "name": "tutor",
+        "description": "What can I teach you?",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "start",
+            "description": "Start the conversation"
+          },
+          {
+            "name": "end",
+            "description": "End the conversation"
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.9",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^8.10.0",
+    "@typescript-eslint/parser": "^8.7.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.13.0",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "axios": "^1.7.9"
+  }
+}
