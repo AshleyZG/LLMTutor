@@ -1,18 +1,11 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+
 import codeTutorHandler from './codeTutor';
 import { ProgressMonitor } from './progressMonitor';
 import { popUpWindowQuestions } from './windowQuestions';
-
-
-// This is for annotation in code
-const ANNOTATION_PROMPT = `You are a code tutor who helps students learn how to write better code. Your job is to evaluate a block of code that the user gives you and then annotate any lines that could be improved with a brief suggestion and the reason why you are making that suggestion. Only make suggestions when you feel the severity is enough that it will impact the readability and maintainability of the code. Be friendly with your suggestions and remember that these are students so they need gentle guidance. Format each suggestion as a single JSON object. It is not necessary to wrap your response in triple backticks. Here is an example of what your response should look like:
-
-{ "line": 1, "suggestion": "I think you should use a for loop instead of a while loop. A for loop is more concise and easier to read." }{ "line": 12, "suggestion": "I think you should use a for loop instead of a while loop. A for loop is more concise and easier to read." }
-`;
-const SUGGEST_QUESTIONS = ['Do you understand for loop?', 'Do you know how to approach the problem?', 'How to write a for loop?'];
-
+import humanInstructorHandler from './humanInstructor';
 
 
 // This method is called when your extension is activated
@@ -51,6 +44,13 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 	// add icon to participant
 	tutor.iconPath = vscode.Uri.joinPath(context.extensionUri, './img/tutor.png');
+
+	// create human instructor participant
+	const humanInstructor = vscode.chat.createChatParticipant('chat-tutorial.human-instructor', humanInstructorHandler);
+	context.subscriptions.push(
+		humanInstructor,
+	);
+	
 
 	const progressMonitor = new ProgressMonitor();
 	progressMonitor.start();
