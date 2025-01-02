@@ -14,6 +14,70 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Telemetry",
+      "properties": {
+        "telemetry.activeEvents": {
+          "type": "array",
+          "default": [
+            {
+              "name": "DocumentOpenEvent",
+              "logWholeDocument": true
+            },
+            {
+              "name": "DocumentChangeEvent",
+              "logWholeDocument": false
+            },
+            {
+              "name": "DocumentCloseEvent",
+              "logWholeDocument": false
+            },
+            {
+              "name": "DocumentSaveEvent",
+              "logWholeDocument": false
+            }
+          ],
+          "description": "Active events settings"
+        },
+        "telemetry.exporters": {
+          "type": "array",
+          "default": [
+            {
+              "type": "console_exporter"
+            },
+            {
+              "type": "remote_exporter",
+              "args": {
+                "id": "llmtutor",
+                "url": "http://localhost:3000"
+              }
+            },
+            {
+              "type": "remote_exporter",
+              "args": {
+                "id": "InfluxDB",
+                "url": "https://68ltdi5iij.execute-api.us-east-1.amazonaws.com/influx-vscode",
+                "params": {
+                  "influx_bucket": "telemetry_dev",
+                  "influx_measurement": "vscode"
+                }
+              },
+              "activeEvents": [
+                {
+                  "name": "DocumentOpenEvent",
+                  "logWholeDocument": true
+                },
+                {
+                  "name": "DocumentChangeEvent",
+                  "logWholeDocument": false
+                }
+              ]
+            }
+          ],
+          "description": "Exporter settings"
+        }
+      }
+    },
     "commands": [
       {
         "command": "llmtutor.proactiveMode",
@@ -78,7 +142,13 @@
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.13.0",
-    "typescript": "^5.6.3"
+    "glob": "^10.3.10",
+    "mocha": "^10.2.0",
+    "prettier": "3.0.3",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.6.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "axios": "^1.7.9"

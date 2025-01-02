@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import { getVisibleCodeWithLineNumbers } from "./utils";
-import { queryObjects } from "v8";
 
 
 const PROMPT = `You are a coding TA that help student complete their coding exercise. Your job is to prompt questions for the student to ask for help so that they can better understand the concepts and apply them. The user will send you the student's code snippet with a special toekn '<CURSOR>' in it indicating where the cursor is located in student's code snippet. You will then generate three questions based on your code snippet and the location of the cursor. The questions should be related to the code snippet and the concept that the student is learning. Format each question as a single JSON object. It is not necessary to wrap your response in triple backticks. Here is an example of what your response should look like:
