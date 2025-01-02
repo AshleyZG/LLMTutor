@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import axios from 'axios';
 
 export function getVisibleCodeWithLineNumbers(textEditor: vscode.TextEditor) {
 	// get the position of the first and last visible lines
@@ -32,4 +33,21 @@ export function getVisibleCodeWithLineNumbers(textEditor: vscode.TextEditor) {
 
     console.log('Visible Code: ', code);
 	return code;
+}
+
+
+export async function sendServerQuestion(sender: string, serverQuestion: string) {
+    try {
+        console.log('Sending question to server');
+        const response = await axios.post("http://localhost:5001/chat", { content: JSON.stringify({
+            // get vscode machine ID as ID field
+            "id": vscode.env.machineId,
+            "sender": sender,
+            "question": serverQuestion,
+        }) });
+        console.log(`Data exported successfully!`);
+    } catch (error: any) {
+        console.error(`Failed to export data: ${error.message}`);
+    }
+
 }

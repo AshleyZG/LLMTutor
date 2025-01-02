@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 import * as http from 'http';
 import Observable from './observableValue';
+import axios from 'axios';
+import { setCurrentMessage } from './humanInstructor';
+import { popUpInstructorQuestion } from './windowQuestions';
 
 // This is for chat participant to proactively sent a message to the user when they have not progressed in the last 5 minutes
 export class ProgressMonitor {
@@ -17,8 +20,7 @@ export class ProgressMonitor {
         this.edits.subscribe(this.handleEditsChange);
     }
 
-    private handleEditsChange(newValue: any, oldValue: any){
-
+    private async handleEditsChange(newValue: any, oldValue: any){
         if (this._timeout){
             clearTimeout(this._timeout);
         }
@@ -26,9 +28,23 @@ export class ProgressMonitor {
         if (this._status === 'on'){
             console.log('edits change observed.'); 
             this._timeout = setTimeout(this.proactiveTrigger, this._strugglingInterval);    
-        }else{
-            return;
         }
+        
+        // Send edit data to server
+        try {
+            const newEdits = newValue.slice(oldValue.length, newValue.length);
+            const currentCode = vscode.window.activeTextEditor?.document.getText();
+            console.log('Sending data to server');
+            const response = await axios.post("http://localhost:5001/edit", { content: JSON.stringify({
+                "id": vscode.env.machineId,
+                "edits": newEdits,
+                "code": currentCode
+            }) });
+            console.log(`Data exported successfully!`);
+        } catch (error: any) {
+            console.error(`Failed to export data: ${error.message}`);
+        }
+
     }
 
     // This method is to trigger proactive feedback from the LLM tutor
@@ -47,11 +63,21 @@ export class ProgressMonitor {
                     body += chunk.toString(); // Convert Buffer to string
                 });
                 req.on('end', () => {
-                    console.log('Received data'); // Handle the received data
-                    // add buffer to both allEdits and currentEdits
-                    this.edits.value = [...this.edits.value, JSON.parse(body)];
-                    res.writeHead(200, { 'Content-Type': 'text/plain' });
-                    res.end('Data received successfully');
+                    if (req.url === '/teacher') {
+                        console.log('Received teacher data:', JSON.parse(body));
+                        setCurrentMessage(JSON.parse(body).body.question);
+                        popUpInstructorQuestion();
+                        // Add teacher-specific handling here
+                        res.writeHead(200, { 'Content-Type': 'text/plain' });
+                        res.end('Teacher data received successfully');
+                    } 
+                    else{
+                        console.log('Received data', JSON.parse(body)); // Handle the received data
+                        // add buffer to both allEdits and currentEdits
+                        this.edits.value = [...this.edits.value, JSON.parse(body)];
+                        res.writeHead(200, { 'Content-Type': 'text/plain' });
+                        res.end('Data received successfully');    
+                    }
                 });
             } else {
                 res.writeHead(405, { 'Content-Type': 'text/plain' });

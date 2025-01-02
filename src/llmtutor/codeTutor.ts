@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { sendServerQuestion } from './utils';
 
 // This is for chat participant (tutor)
 const BASE_PROMPT =
@@ -59,13 +60,19 @@ const createHandler = (initPrompt: string) => {
 		// add in the user's message
 		messages.push(vscode.LanguageModelChatMessage.User(request.prompt));
 
+		await sendServerQuestion('user', request.prompt);
+
 		// send the request
 		const chatResponse = await request.model.sendRequest(messages, {}, token);
 
+		let result = '';
 		// stream the response
 		for await (const fragment of chatResponse.text) {
 			stream.markdown(fragment);
+			result += fragment;
 		}
+
+		await sendServerQuestion('bot', result);
 
 		return;
 	};

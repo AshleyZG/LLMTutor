@@ -122,8 +122,30 @@
             "description": "End the conversation"
           }
         ]
+      },
+      {
+        "id": "chat-tutorial.human-instructor",
+        "fullName": "Human Instructor",
+        "name": "instructor",
+        "description": "Human instructor that manage the tutor",
+        "commands": [
+          {
+            "name": "read",
+            "description": "Read the current message from human"
+          }
+        ]
       }
-    ]
+    ],
+    "configuration": {
+      "title": "LLMTutor Settings",
+      "properties": {
+        "llmtutor.exportUrl": {
+          "type": "string",
+          "default": "http://localhost:5001",
+          "description": "The URL to export data to."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
