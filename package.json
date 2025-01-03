@@ -53,13 +53,6 @@
             {
               "type": "remote_exporter",
               "args": {
-                "id": "llmtutor",
-                "url": "http://localhost:3000"
-              }
-            },
-            {
-              "type": "remote_exporter",
-              "args": {
                 "id": "InfluxDB",
                 "url": "https://68ltdi5iij.execute-api.us-east-1.amazonaws.com/influx-vscode",
                 "params": {
