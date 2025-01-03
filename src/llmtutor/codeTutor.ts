@@ -8,20 +8,23 @@ const BASE_PROMPT =
 
 const getPreviousMessages = (context: vscode.ChatContext) => {
 	let messages: Array<any> = [];
-
 	// get all the previous participant messages
 	const previousMessages = context.history.filter(
-		h => h instanceof vscode.ChatResponseTurn
+		h => h instanceof vscode.ChatResponseTurn || h instanceof vscode.ChatRequestTurn
 	);
 
 	// add the previous messages to the messages array
 	previousMessages.forEach(m => {
-		let fullMessage = '';
-		m.response.forEach(r => {
-		const mdPart = r as vscode.ChatResponseMarkdownPart;
-		fullMessage += mdPart.value.value;
-		});
-		messages.push(vscode.LanguageModelChatMessage.Assistant(fullMessage));
+		if (m instanceof vscode.ChatResponseTurn) {
+			// For bot responses
+			const markdown = m.response
+				.map(r => (r as vscode.ChatResponseMarkdownPart).value.value)
+				.join('\n');
+			messages.push(vscode.LanguageModelChatMessage.Assistant(markdown));
+		} else if (m instanceof vscode.ChatRequestTurn) {
+			// For user messages
+			messages.push(vscode.LanguageModelChatMessage.User(m.prompt));
+		}
 	});
 
 	return messages;
@@ -46,6 +49,7 @@ const createHandler = (initPrompt: string) => {
             return;
         }else if (request.command === 'start'){
             stream.markdown(`The conversation has started. From now on, the LLM tutor will provide help for you when requested or no progress detected.`);
+			return;
         }
 
 		// initialize the prompt
@@ -55,24 +59,28 @@ const createHandler = (initPrompt: string) => {
 		const messages = [vscode.LanguageModelChatMessage.User(prompt)];
 
 		const previousMessages = getPreviousMessages(context);
+
 		messages.push(...previousMessages);
 
 		// add in the user's message
 		messages.push(vscode.LanguageModelChatMessage.User(request.prompt));
 
-		await sendServerQuestion('user', request.prompt);
+		// Get the full markdown content before sending to server
+		const userMessage = request.prompt;
+		await sendServerQuestion('user', userMessage);
 
 		// send the request
 		const chatResponse = await request.model.sendRequest(messages, {}, token);
 
-		let result = '';
+		let fullResponse = '';
 		// stream the response
 		for await (const fragment of chatResponse.text) {
 			stream.markdown(fragment);
-			result += fragment;
+			fullResponse += fragment;
 		}
 
-		await sendServerQuestion('bot', result);
+		// Send the complete markdown response to the server
+		await sendServerQuestion('bot', fullResponse);
 
 		return;
 	};
