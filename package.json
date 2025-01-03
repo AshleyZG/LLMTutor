@@ -15,8 +15,13 @@
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Telemetry",
+      "title": "LLMTutor Settings",
       "properties": {
+        "llmtutor.exportUrl": {
+          "type": "string",
+          "default": "http://localhost:5001",
+          "description": "The URL to export data to."
+        },
         "telemetry.activeEvents": {
           "type": "array",
           "default": [
@@ -135,17 +140,7 @@
           }
         ]
       }
-    ],
-    "configuration": {
-      "title": "LLMTutor Settings",
-      "properties": {
-        "llmtutor.exportUrl": {
-          "type": "string",
-          "default": "http://localhost:5001",
-          "description": "The URL to export data to."
-        }
-      }
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
