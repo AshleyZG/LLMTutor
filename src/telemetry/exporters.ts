@@ -64,6 +64,8 @@ async function remoteExporter(data: EventData, args: ExporterArgs | undefined) {
 export async function publishEvent(data: EventData, exporter: Exporter) {
   if (exporter.type === "console_exporter") {
     consoleExporter(data);
+    // We need to always enable `console_exporter`, and notify all observers
+    observers.forEach(observer => observer(data));
   }
   if (exporter.type === "file_exporter") {
     const response = await fileExporter(data, exporter.args);
@@ -73,9 +75,6 @@ export async function publishEvent(data: EventData, exporter: Exporter) {
     const response = await remoteExporter(data, exporter.args);
     console.log(response);
   }
-
-  // Notify all observers
-  observers.forEach(observer => observer(data));
 }
 
 export function addObserver(observer: EventObserver) {
