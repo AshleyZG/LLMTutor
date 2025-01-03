@@ -3,6 +3,10 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import { posix } from "path";
 
+type EventObserver = (event: EventData) => void;
+
+let observers: EventObserver[] = [];
+
 function consoleExporter(data: EventData) {
   console.log(data);
 }
@@ -69,4 +73,15 @@ export async function publishEvent(data: EventData, exporter: Exporter) {
     const response = await remoteExporter(data, exporter.args);
     console.log(response);
   }
+
+  // Notify all observers
+  observers.forEach(observer => observer(data));
+}
+
+export function addObserver(observer: EventObserver) {
+  observers.push(observer);
+}
+
+export function removeObserver(observer: EventObserver) {
+  observers = observers.filter(obs => obs !== observer);
 }

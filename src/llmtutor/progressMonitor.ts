@@ -4,6 +4,8 @@ import Observable from './observableValue';
 import axios from 'axios';
 import { setCurrentMessage } from './humanInstructor';
 import { popUpInstructorQuestion } from './windowQuestions';
+import { addObserver, removeObserver } from '../telemetry/exporters';
+import { EventData } from '../telemetry/types';
 
 // This is for chat participant to proactively sent a message to the user when they have not progressed in the last 5 minutes
 export class ProgressMonitor {
@@ -16,8 +18,10 @@ export class ProgressMonitor {
 
     constructor() {
         this.handleEditsChange = this.handleEditsChange.bind(this);
+        this.handleEvent = this.handleEvent.bind(this);
 
         this.edits.subscribe(this.handleEditsChange);
+        addObserver(this.handleEvent);
     }
 
     private async handleEditsChange(newValue: any, oldValue: any){
@@ -45,6 +49,12 @@ export class ProgressMonitor {
             console.error(`Failed to export data: ${error.message}`);
         }
 
+    }
+
+    private handleEvent(event: EventData) {
+        console.log('Now test combining telemetry and llmtutor')
+        console.log('Observed event:', event);
+        // Handle the event data as needed
     }
 
     // This method is to trigger proactive feedback from the LLM tutor
@@ -104,6 +114,7 @@ export class ProgressMonitor {
     stop(): void {
         this._status = 'off';
         this.closeServer();
+        removeObserver(this.handleEvent);
     }
 
     pause(): void {
