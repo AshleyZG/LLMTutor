@@ -52,9 +52,9 @@ export class ProgressMonitor {
     }
 
     private handleEvent(event: EventData) {
-        console.log('Now test combining telemetry and llmtutor')
-        console.log('Observed event:', event);
         // Handle the event data as needed
+        // Once event publish from telemetry, we will add it to the edits observable
+        this.edits.value = [...this.edits.value, event];
     }
 
     // This method is to trigger proactive feedback from the LLM tutor
@@ -81,13 +81,6 @@ export class ProgressMonitor {
                         res.writeHead(200, { 'Content-Type': 'text/plain' });
                         res.end('Teacher data received successfully');
                     } 
-                    else{
-                        console.log('Received data', JSON.parse(body)); // Handle the received data
-                        // add buffer to both allEdits and currentEdits
-                        this.edits.value = [...this.edits.value, JSON.parse(body)];
-                        res.writeHead(200, { 'Content-Type': 'text/plain' });
-                        res.end('Data received successfully');    
-                    }
                 });
             } else {
                 res.writeHead(405, { 'Content-Type': 'text/plain' });
