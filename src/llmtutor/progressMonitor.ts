@@ -17,44 +17,44 @@ export class ProgressMonitor {
     private _strugglingInterval: number = 0.1*60*1000; // 0.1 minutes
 
     constructor() {
-        this.handleEditsChange = this.handleEditsChange.bind(this);
+        this.monitorEditsStatus = this.monitorEditsStatus.bind(this);
         this.handleEvent = this.handleEvent.bind(this);
 
-        this.edits.subscribe(this.handleEditsChange);
+        this.edits.subscribe(this.monitorEditsStatus);
         addObserver(this.handleEvent);
     }
 
-    private async handleEditsChange(newValue: any, oldValue: any){
+    private monitorEditsStatus(newValue: any, oldValue: any){
         if (this._timeout){
             clearTimeout(this._timeout);
         }
-
         if (this._status === 'on'){
             console.log('edits change observed.'); 
             this._timeout = setTimeout(this.proactiveTrigger, this._strugglingInterval);    
         }
-        
+    }
+
+    private async sendEditToServer(event: any){
         // Send edit data to server
         try {
-            const newEdits = newValue.slice(oldValue.length, newValue.length);
             const currentCode = vscode.window.activeTextEditor?.document.getText();
             console.log('Sending data to server');
             const response = await axios.post("http://localhost:5001/edit", { content: JSON.stringify({
                 "id": vscode.env.machineId,
-                "edits": newEdits,
+                "edits": event,
                 "code": currentCode
             }) });
             console.log(`Data exported successfully!`);
         } catch (error: any) {
             console.error(`Failed to export data: ${error.message}`);
         }
-
     }
 
     private handleEvent(event: EventData) {
         // Handle the event data as needed
-        // Once event publish from telemetry, we will add it to the edits observable
+        // Once event publish from telemetry, we will add it to the edits observable, and send it to the central server
         this.edits.value = [...this.edits.value, event];
+        this.sendEditToServer(event);
     }
 
     // This method is to trigger proactive feedback from the LLM tutor
