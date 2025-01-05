@@ -75,11 +75,11 @@ export class ProgressMonitor {
                 req.on('end', () => {
                     if (req.url === '/teacher') {
                         console.log('Received teacher data:', JSON.parse(body));
-                        setCurrentMessage(JSON.parse(body).body.question);
+                        const item = JSON.parse(body);
+                        setCurrentMessage(item.body.question, item.body.recipient);
                         popUpInstructorQuestion();
                         // Add teacher-specific handling here
                         res.writeHead(200, { 'Content-Type': 'text/plain' });
-                        res.end('Teacher data received successfully');
                     } 
                 });
             } else {

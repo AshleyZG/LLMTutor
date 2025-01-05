@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import codeTutorHandler from './codeTutor';
+import humanInstructorHandler from './humanInstructor';
 import { ProgressMonitor } from './progressMonitor';
 import { popUpWindowQuestions } from './windowQuestions';
 
@@ -51,6 +52,16 @@ export function activate(context: vscode.ExtensionContext) {
 	);
 	// add icon to participant
 	tutor.iconPath = vscode.Uri.joinPath(context.extensionUri, './img/tutor.png');
+
+
+	// create human instructor
+	const humanInstructor = vscode.chat.createChatParticipant('chat-tutorial.human-instructor', humanInstructorHandler);
+	// human instructor should first send a message to the participant
+	context.subscriptions.push(
+		humanInstructor,
+	);
+	// add icon to participant
+	humanInstructor.iconPath = vscode.Uri.joinPath(context.extensionUri, './img/instructor.png');
 
 	const progressMonitor = new ProgressMonitor();
 	progressMonitor.start();
