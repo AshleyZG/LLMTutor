@@ -1,6 +1,9 @@
 import * as vscode from "vscode";
 import axios from 'axios';
 
+const config = vscode.workspace.getConfiguration('llmtutor');
+const exportUrl = config.get('exportUrl');
+
 export function getVisibleCodeWithLineNumbers(textEditor: vscode.TextEditor) {
 	// get the position of the first and last visible lines
 	let currentLine = textEditor.visibleRanges[0].start.line;
@@ -39,7 +42,7 @@ export function getVisibleCodeWithLineNumbers(textEditor: vscode.TextEditor) {
 export async function sendServerQuestion(sender: string, serverQuestion: string) {
     try {
         console.log('Sending question to server');
-        const response = await axios.post("http://localhost:5001/chat", { content: JSON.stringify({
+        const response = await axios.post(`${exportUrl}/chat`, { content: JSON.stringify({
             // get vscode machine ID as ID field
             "id": vscode.env.machineId,
             "sender": sender,

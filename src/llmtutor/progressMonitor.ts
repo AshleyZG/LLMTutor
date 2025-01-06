@@ -7,6 +7,9 @@ import { popUpInstructorQuestion } from './windowQuestions';
 import { addObserver, removeObserver } from '../telemetry/exporters';
 import { EventData } from '../telemetry/types';
 
+const config = vscode.workspace.getConfiguration('llmtutor');
+const exportUrl = config.get('exportUrl');
+
 // This is for chat participant to proactively sent a message to the user when they have not progressed in the last 5 minutes
 export class ProgressMonitor {
     private _timeout: NodeJS.Timeout | undefined;
@@ -39,7 +42,7 @@ export class ProgressMonitor {
         try {
             const currentCode = vscode.window.activeTextEditor?.document.getText();
             console.log('Sending data to server');
-            const response = await axios.post("http://localhost:5001/edit", { content: JSON.stringify({
+            const response = await axios.post(`${exportUrl}/edit`, { content: JSON.stringify({
                 "id": vscode.env.machineId,
                 "edits": event,
                 "code": currentCode

@@ -19,7 +19,7 @@
       "properties": {
         "llmtutor.exportUrl": {
           "type": "string",
-          "default": "http://localhost:5001",
+          "default": "http://ec2-3-136-84-234.us-east-2.compute.amazonaws.com:5001",
           "description": "The URL to export data to."
         },
         "telemetry.activeEvents": {
