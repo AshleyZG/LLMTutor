@@ -1,19 +1,13 @@
 import * as vscode from 'vscode';
-import * as http from 'http';
 import Observable from './observableValue';
-import axios from 'axios';
-import { setCurrentMessage } from './humanInstructor';
-import { popUpInstructorQuestion } from './windowQuestions';
 import { addObserver, removeObserver } from '../telemetry/exporters';
 import { EventData } from '../telemetry/types';
+import SocketService from './socketService';
 
-const config = vscode.workspace.getConfiguration('llmtutor');
-const exportUrl = config.get('exportUrl');
 
 // This is for chat participant to proactively sent a message to the user when they have not progressed in the last 5 minutes
 export class ProgressMonitor {
     private _timeout: NodeJS.Timeout | undefined;
-    private _server: http.Server | undefined;
     private _status: 'on' | 'off' = 'off';
     private edits: Observable<any[]> = new Observable([] as any[]);
 
@@ -37,19 +31,18 @@ export class ProgressMonitor {
         }
     }
 
-    private async sendEditToServer(event: any){
-        // Send edit data to server
+    private async sendEditToServer(event: any) {
         try {
             const currentCode = vscode.window.activeTextEditor?.document.getText();
-            console.log('Sending data to server');
-            const response = await axios.post(`${exportUrl}/edit`, { content: JSON.stringify({
-                "id": vscode.env.machineId,
-                "edits": event,
-                "code": currentCode
-            }) });
-            console.log(`Data exported successfully!`);
+            console.log('Sending edit data through Socket.IO...');
+            SocketService.getInstance().sendMessage('edit', {
+                id: vscode.env.machineId,
+                edits: event,
+                code: currentCode
+            });
+            console.log('✅ Edit data sent successfully');
         } catch (error: any) {
-            console.error(`Failed to export data: ${error.message}`);
+            console.error('❌ Failed to send edit data:', error.message);
         }
     }
 
@@ -67,49 +60,15 @@ export class ProgressMonitor {
     };
 
 
-    private startServer() {
-        // Set up a local server to listen on telemetry exporter
-        this._server = http.createServer((req, res) => {
-            if (req.method === 'POST') {
-                let body = '';
-                req.on('data', chunk => {
-                    body += chunk.toString(); // Convert Buffer to string
-                });
-                req.on('end', () => {
-                    if (req.url === '/teacher') {
-                        console.log('Received teacher data:', JSON.parse(body));
-                        const item = JSON.parse(body);
-                        setCurrentMessage(item.body.question, item.body.recipient);
-                        popUpInstructorQuestion();
-                        // Add teacher-specific handling here
-                        res.writeHead(200, { 'Content-Type': 'text/plain' });
-                    } 
-                });
-            } else {
-                res.writeHead(405, { 'Content-Type': 'text/plain' });
-                res.end('Only POST requests are accepted');
-            }
-        });
-        // Listen on an available port (e.g., 3000)
-        const port = 3000;
-        this._server.listen(port, () => {
-            console.log(`LLMTutor's server is listening on port ${port}`);
-        });
-    }
-
-    private closeServer(): void {
-        this._server?.close();
-    }
 
     async start() {
         this._status = 'on';
-        this.startServer();
         await vscode.commands.executeCommand('workbench.action.chat.open', { query: '@tutor /start' });
     }
 
     stop(): void {
         this._status = 'off';
-        this.closeServer();
+        SocketService.getInstance().disconnect();
         removeObserver(this.handleEvent);
     }
 

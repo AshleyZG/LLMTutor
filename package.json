@@ -19,7 +19,7 @@
       "properties": {
         "llmtutor.exportUrl": {
           "type": "string",
-          "default": "http://ec2-3-136-84-234.us-east-2.compute.amazonaws.com:5001",
+          "default": "http://localhost:5001",
           "description": "The URL to export data to backend."
         },
         "telemetry.activeEvents": {
@@ -161,6 +161,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "axios": "^1.7.9"
+    "axios": "^1.7.9",
+    "socket.io-client": "^4.8.1"
   }
 }
