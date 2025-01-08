@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { sendServerQuestion } from './utils';
+import ChatService from './chatService';
+
 
 // This is for chat participant (tutor)
 const BASE_PROMPT =
@@ -20,21 +21,24 @@ const createHandler = (initPrompt: string) => {
 		stream: vscode.ChatResponseStream,
 		token: vscode.CancellationToken
 	) => {
-		if (request.command === 'read') {
-			// Create a new message that will be processed by the tutor
-			const messages = [vscode.LanguageModelChatMessage.Assistant(initPrompt)];
-			messages.push(vscode.LanguageModelChatMessage.User(`@${recipient} ${currentMessage}`));
-			// Send the instruction to the tutor
-			const response = await request.model.sendRequest(
-				messages,
-				{},
-				token
-			);
+		ChatService.getInstance().addMessage(vscode.LanguageModelChatMessage.User(request.prompt));
 
-			// Stream the response
-			for await (const fragment of response.text) {
-				stream.markdown(fragment);
+		// Get chat history
+		if (request.command === 'read') {
+			const message = `The following message is sent to ${recipient}:\n\`\`\`\n${currentMessage}\n\`\`\``;
+			
+			// First send the markdown response
+			stream.markdown(message);
+
+			ChatService.getInstance().addMessage(vscode.LanguageModelChatMessage.Assistant(message, 'instructor'));
+			
+			if (recipient === 'tutor') {
+				stream.push(new vscode.ChatResponseCommandButtonPart({
+					command: 'llmtutor.promptTutorFromInstructor',
+					title: 'Prompt tutor'
+				}));
 			}
+
 			return;
 		}
 		return;

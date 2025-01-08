@@ -1,34 +1,12 @@
 import * as vscode from 'vscode';
 import { sendServerQuestion } from './utils';
+import ChatService from './chatService';
+import { ToolUserPrompt } from './history';
+import { renderPrompt } from '@vscode/prompt-tsx';
 
 // This is for chat participant (tutor)
 const BASE_PROMPT =
   'You are a helpful code tutor. Your job is to teach the user with simple descriptions and sample code of the concept. Respond with a guided overview of the concept in a series of messages. Do not give the user the answer directly, but guide them to find the answer themselves. If the user asks a non-programming question, politely decline to respond.';
-
-
-const getPreviousMessages = (context: vscode.ChatContext) => {
-	let messages: Array<any> = [];
-	// get all the previous participant messages
-	const previousMessages = context.history.filter(
-		h => h instanceof vscode.ChatResponseTurn || h instanceof vscode.ChatRequestTurn
-	);
-
-	// add the previous messages to the messages array
-	previousMessages.forEach(m => {
-		if (m instanceof vscode.ChatResponseTurn) {
-			// For bot responses
-			const markdown = m.response
-				.map(r => (r as vscode.ChatResponseMarkdownPart).value.value)
-				.join('\n');
-			messages.push(vscode.LanguageModelChatMessage.Assistant(markdown));
-		} else if (m instanceof vscode.ChatRequestTurn) {
-			// For user messages
-			messages.push(vscode.LanguageModelChatMessage.User(m.prompt));
-		}
-	});
-
-	return messages;
-};
 
 
 const createHandler = (initPrompt: string) => {
@@ -55,22 +33,22 @@ const createHandler = (initPrompt: string) => {
 		// initialize the prompt
 		let prompt = initPrompt;
 
-		// initialize the messages array with the prompt
-		const messages = [vscode.LanguageModelChatMessage.User(prompt)];
-
-		const previousMessages = getPreviousMessages(context);
-
-		messages.push(...previousMessages);
-
-		// add in the user's message
-		messages.push(vscode.LanguageModelChatMessage.User(request.prompt));
-
 		// Get the full markdown content before sending to server
 		const userMessage = request.prompt;
 		await sendServerQuestion('user', userMessage);
 
+		const results = await renderPrompt(
+			ToolUserPrompt,
+			{
+				request: request,
+				context: context,			
+			},
+			{modelMaxPromptTokens: request.model.maxInputTokens},
+			request.model,
+		) 
 		// send the request
-		const chatResponse = await request.model.sendRequest(messages, {}, token);
+
+		const chatResponse = await request.model.sendRequest(results.messages, {}, token);
 
 		let fullResponse = '';
 		// stream the response
@@ -81,9 +59,11 @@ const createHandler = (initPrompt: string) => {
 
 		// Send the complete markdown response to the server
 		await sendServerQuestion('bot', fullResponse);
+		ChatService.getInstance().addMessage(vscode.LanguageModelChatMessage.Assistant(fullResponse, 'tutor'));
 
 		return;
 	};
+	
 	return handler;
 };
 
