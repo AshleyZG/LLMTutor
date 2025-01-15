@@ -52,7 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
 		humanInstructor,
 	);
 	// add icon to participant
-	humanInstructor.iconPath = vscode.Uri.joinPath(context.extensionUri, './img/instructor.png');
+	humanInstructor.iconPath = vscode.Uri.joinPath(context.extensionUri, './img/stewie.png');
 
 	const progressMonitor = new ProgressMonitor();
 	progressMonitor.start();
