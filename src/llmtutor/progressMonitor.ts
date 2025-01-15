@@ -14,12 +14,20 @@ export class ProgressMonitor {
     private _strugglingInterval: number = 1*60*1000; // 1 minutes
     private _hasTriggered: boolean = false;
 
+    // Add a message queue
+    private _pendingMessages: Array<{event: 'chat' | 'edit', data: any}> = [];
+
     constructor() {
         this.monitorEditsStatus = this.monitorEditsStatus.bind(this);
         this.handleEvent = this.handleEvent.bind(this);
+        this.processPendingMessages = this.processPendingMessages.bind(this);
 
         this.edits.subscribe(this.monitorEditsStatus);
         addObserver(this.handleEvent);
+        
+        // Add socket reconnection handler
+        const socketService = SocketService.getInstance();
+        socketService.onReconnect(this.processPendingMessages);
     }
 
     private monitorEditsStatus(newValue: any, oldValue: any){
@@ -33,16 +41,46 @@ export class ProgressMonitor {
         }
     }
 
+    private async processPendingMessages() {
+        const socketService = SocketService.getInstance();
+        while (socketService.isConnected() && this._pendingMessages.length > 0) {
+            const pendingMessage = this._pendingMessages.shift();
+            if (pendingMessage) {
+                try {
+                    socketService.sendMessage(pendingMessage.event, pendingMessage.data);
+                    console.log('✅ Pending message sent successfully');
+                } catch (error: any) {
+                    console.error('❌ Failed to send pending message:', error.message);
+                    // Put the message back in the queue
+                    this._pendingMessages.unshift(pendingMessage);
+                    break;
+                }
+            }
+        }
+    }
+
     private async sendEditToServer(event: any) {
         try {
+            const socketService = SocketService.getInstance();
             const currentCode = vscode.window.activeTextEditor?.document.getText();
-            console.log('Sending edit data through Socket.IO...');
-            SocketService.getInstance().sendMessage('edit', {
+            const messageData = {
                 id: vscode.env.machineId,
                 edits: event,
                 code: currentCode
-            });
+            };
+
+            if (!socketService.isConnected()) {
+                console.log('Socket not connected, queuing message...');
+                this._pendingMessages.push({ event: 'edit', data: messageData });
+                return;
+            }
+
+            console.log('Sending edit data through Socket.IO...');
+            socketService.sendMessage('edit', messageData);
             console.log('✅ Edit data sent successfully');
+
+            // Replace the existing pending messages loop with the new method
+            await this.processPendingMessages();
         } catch (error: any) {
             console.error('❌ Failed to send edit data:', error.message);
         }

@@ -6,7 +6,7 @@ import { popUpInstructorQuestion } from './windowQuestions';
 const config = vscode.workspace.getConfiguration('llmtutor');
 const serverUrl = config.get('exportUrl');
 
-class SocketService {
+export default class SocketService {
     private static instance: SocketService;
     private socket: Socket;
 
@@ -86,6 +86,12 @@ class SocketService {
     public disconnect() {
         this.socket.disconnect();
     }
-}
 
-export default SocketService; 
+    public isConnected(): boolean {
+        return this.socket?.connected ?? false;
+    }
+
+    public onReconnect(callback: () => void) {
+        this.socket?.on('connect', callback);
+    }
+} 
