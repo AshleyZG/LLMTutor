@@ -110,7 +110,7 @@
     "chatParticipants": [
       {
         "id": "chat-tutorial.code-tutor",
-        "fullName": "Code Tutor",
+        "fullName": "AI Tutor",
         "name": "tutor",
         "description": "What can I teach you?",
         "isSticky": true,
@@ -127,7 +127,7 @@
       },
       {
         "id": "chat-tutorial.human-instructor",
-        "fullName": "Human Instructor",
+        "fullName": "Stewie Griffin",
         "name": "instructor",
         "description": "Human instructor that manage the tutor",
         "commands": [
