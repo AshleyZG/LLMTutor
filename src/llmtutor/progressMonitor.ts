@@ -11,7 +11,8 @@ export class ProgressMonitor {
     private _status: 'on' | 'off' = 'off';
     private edits: Observable<any[]> = new Observable([] as any[]);
 
-    private _strugglingInterval: number = 0.1*60*1000; // 0.1 minutes
+    private _strugglingInterval: number = 1*60*1000; // 1 minutes
+    private _hasTriggered: boolean = false;
 
     constructor() {
         this.monitorEditsStatus = this.monitorEditsStatus.bind(this);
@@ -27,6 +28,7 @@ export class ProgressMonitor {
         }
         if (this._status === 'on'){
             console.log('edits change observed.'); 
+            this._hasTriggered = false;
             this._timeout = setTimeout(this.proactiveTrigger, this._strugglingInterval);    
         }
     }
@@ -55,14 +57,17 @@ export class ProgressMonitor {
 
     // This method is to trigger proactive feedback from the LLM tutor
     async proactiveTrigger() {
-        // pop up a notification at the cursor position
-        await vscode.commands.executeCommand('llmtutor.promptQuestion');
+        if (!this._hasTriggered) {
+            this._hasTriggered = true;
+            await vscode.commands.executeCommand('llmtutor.promptQuestion');
+        }
     };
 
 
 
     async start() {
         this._status = 'on';
+        this._hasTriggered = false;
         await vscode.commands.executeCommand('workbench.action.chat.open', { query: '@tutor /start' });
     }
 
