@@ -41,5 +41,6 @@ export async function sendServerQuestion(sender: string, serverQuestion: string)
         id: vscode.env.machineId,
         sender: sender,
         question: serverQuestion,
+        timestamp: Date.now(),
     });
 }
