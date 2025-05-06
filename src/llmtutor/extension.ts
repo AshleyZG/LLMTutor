@@ -5,7 +5,13 @@ import codeTutorHandler from './codeTutor';
 import humanInstructorHandler from './humanInstructor';
 import { ProgressMonitor } from './progressMonitor';
 import { popUpWindowQuestions } from './windowQuestions';
+import { RecordingState } from './recording';
 
+const config = vscode.workspace.getConfiguration('llmtutor');
+
+const recordingState = RecordingState.getInstance();
+recordingState.isRecording = false;
+recordingState.recordingFolder = config.get('recordingFolderUrl') as string;
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -18,7 +24,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	let toggleStatusBarItem: vscode.StatusBarItem;
+	let recordingStatusBarItem: vscode.StatusBarItem;
 
+	// create status bar item for activating the extension itself
 	function createStatusBarSwitch(context: vscode.ExtensionContext) {
 		toggleStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 		updateStatusBar(context);
@@ -31,9 +39,24 @@ export function activate(context: vscode.ExtensionContext) {
 		const isActive = context.globalState.get<boolean>('extensionActive', true);
 		toggleStatusBarItem.text = `LLMTutor: ${isActive ? 'ON' : 'OFF'}`;
 	}
+
+	// create status bar item for recording edits
+	function createRecordingStatusBar(context: vscode.ExtensionContext) {
+		recordingStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 101);
+		updateRecordingStatusBar(context);
+		recordingStatusBarItem.command = 'llmtutor.toggleRecording';
+		recordingStatusBarItem.show();
+		context.subscriptions.push(recordingStatusBarItem);
+	}
+	
+	function updateRecordingStatusBar(context: vscode.ExtensionContext) {
+		const isRecording = recordingState.isRecording;
+		recordingStatusBarItem.text = `Recording: ${isRecording ? 'ON' : 'OFF'}`;
+	}
 	
 	// Call this when activating the extension
 	createStatusBarSwitch(context);
+	createRecordingStatusBar(context);
 
 	// create participant
 	const tutor = vscode.chat.createChatParticipant('chat-tutorial.code-tutor', codeTutorHandler);
@@ -95,8 +118,23 @@ export function activate(context: vscode.ExtensionContext) {
 		progressMonitor.pause();
 	};
 
-    context.subscriptions.push(toggleCommand);
+	const recordingCommand = vscode.commands.registerCommand('llmtutor.toggleRecording', async () => {
+		const isRecording = recordingState.isRecording;
+		const newState = !isRecording;
+		recordingState.isRecording = newState;
 
+		updateRecordingStatusBar(context);
+		vscode.window.showInformationMessage(`Recording is now ${newState ? 'ON' : 'OFF'}`);
+
+		// once recording is on, create a local document to store the edits
+		if (!newState){
+			recordingState.dumpAndClearRecordingData();
+		}
+	});
+
+
+    context.subscriptions.push(toggleCommand);
+	context.subscriptions.push(recordingCommand);
 
 	context.subscriptions.push(disposable);
 	context.subscriptions.push(disposableProactiveTrigger);

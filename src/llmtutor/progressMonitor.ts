@@ -3,13 +3,15 @@ import Observable from './observableValue';
 import { addObserver, removeObserver } from '../telemetry/exporters';
 import { EventData } from '../telemetry/types';
 import SocketService from './socketService';
-
+import { RecordingState } from './recording';
 
 // This is for chat participant to proactively sent a message to the user when they have not progressed in the last 5 minutes
 export class ProgressMonitor {
     private _timeout: NodeJS.Timeout | undefined;
     private _status: 'on' | 'off' = 'off';
     private edits: Observable<any[]> = new Observable([] as any[]);
+
+    private recordingState = RecordingState.getInstance();
 
     private _strugglingInterval: number = 1*60*1000; // 1 minutes
     private _hasTriggered: boolean = false;
@@ -48,6 +50,9 @@ export class ProgressMonitor {
             if (pendingMessage) {
                 try {
                     socketService.sendMessage(pendingMessage.event, pendingMessage.data);
+                    if (pendingMessage.event === 'edit'){
+                        this.recordingState.appendRecordingData(pendingMessage.data);
+                    }
                     console.log('✅ Pending message sent successfully');
                 } catch (error: any) {
                     console.error('❌ Failed to send pending message:', error.message);
@@ -77,6 +82,7 @@ export class ProgressMonitor {
 
             console.log('Sending edit data through Socket.IO...');
             socketService.sendMessage('edit', messageData);
+            this.recordingState.appendRecordingData(messageData);
             console.log('✅ Edit data sent successfully');
 
             // Replace the existing pending messages loop with the new method

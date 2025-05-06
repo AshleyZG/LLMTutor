@@ -19,8 +19,13 @@
       "properties": {
         "llmtutor.exportUrl": {
           "type": "string",
-          "default": "http://ec2-3-136-84-234.us-east-2.compute.amazonaws.com:5001",
+          "default": "http://localhost:5001",
           "description": "The URL to export data to backend."
+        },
+        "llmtutor.recordingFolderUrl": {
+          "type": "string",
+          "default": "/Users/gezh/Research/src/ProTea/data",
+          "description": "The folder to store the recording data."
         },
         "telemetry.activeEvents": {
           "type": "array",
@@ -49,27 +54,6 @@
           "default": [
             {
               "type": "console_exporter"
-            },
-            {
-              "type": "remote_exporter",
-              "args": {
-                "id": "InfluxDB",
-                "url": "https://68ltdi5iij.execute-api.us-east-1.amazonaws.com/influx-vscode",
-                "params": {
-                  "influx_bucket": "telemetry_dev",
-                  "influx_measurement": "vscode"
-                }
-              },
-              "activeEvents": [
-                {
-                  "name": "DocumentOpenEvent",
-                  "logWholeDocument": true
-                },
-                {
-                  "name": "DocumentChangeEvent",
-                  "logWholeDocument": false
-                }
-              ]
             }
           ],
           "description": "Exporter settings"
@@ -97,6 +81,10 @@
       {
         "command": "llmtutor.toggleActivation",
         "title": "Toggle Activation"
+      },
+      {
+        "command": "llmtutor.toggleRecording",
+        "title": "Toggle Recording"
       }
     ],
     "menus": {
