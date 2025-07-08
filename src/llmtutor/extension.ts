@@ -7,11 +7,27 @@ import { ProgressMonitor } from './progressMonitor';
 import { popUpWindowQuestions } from './windowQuestions';
 import { RecordingState } from './recording';
 
+// Load environment variables from .env file
+import * as path from 'path';
+import * as fs from 'fs';
+try {
+  require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+  const envPath = path.resolve(__dirname, '../../.env');
+  console.log(`.env file loaded successfully from path: ${envPath}`);
+  // Print all loaded environment variables (only those starting with LLMTUTOR_ or RECORDING_ for brevity)
+  const relevantEnv = Object.keys(process.env)
+    .filter(key => key.startsWith('LLMTUTOR_') || key.startsWith('RECORDING_'))
+    .reduce((obj, key) => { obj[key] = process.env[key]; return obj; }, {} as Record<string, string | undefined>);
+  console.log('Loaded environment variables:', relevantEnv);
+} catch (e) {
+  // dotenv not installed or .env not found, ignore
+}
+
 const config = vscode.workspace.getConfiguration('llmtutor');
 
 const recordingState = RecordingState.getInstance();
 recordingState.isRecording = false;
-recordingState.recordingFolder = config.get('recordingFolderUrl') as string;
+recordingState.recordingFolder = process.env.RECORDING_FOLDER_URL || (config.get('recordingFolderUrl') as string);
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -126,8 +142,11 @@ export function activate(context: vscode.ExtensionContext) {
 		updateRecordingStatusBar(context);
 		vscode.window.showInformationMessage(`Recording is now ${newState ? 'ON' : 'OFF'}`);
 
-		// once recording is on, create a local document to store the edits
-		if (!newState){
+		if (newState) {
+			// Clear any existing recording data when starting a new recording session
+			recordingState.clearRecordingData();
+		} else {
+			// Only save and clear recording data when turning OFF recording
 			recordingState.dumpAndClearRecordingData();
 		}
 	});
