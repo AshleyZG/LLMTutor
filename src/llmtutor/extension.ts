@@ -9,7 +9,7 @@ import { RecordingState } from './recording';
 
 // Load environment variables from .env file
 import * as path from 'path';
-import * as fs from 'fs';
+
 try {
   require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
   const envPath = path.resolve(__dirname, '../../.env');
