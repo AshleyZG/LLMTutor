@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import ChatService from './chatService';
+import { sendServerAnswer, sendServerQuestion } from './utils';
 
 
 // This is for chat participant (tutor)
@@ -9,10 +10,22 @@ const BASE_PROMPT =
 let currentMessage = ``;
 let recipient: string | undefined = undefined;
 
+let currentQuiz: string | undefined = undefined;
+let currentQuizAnswer: string | undefined = undefined;
+let currentQuizType: string | undefined = undefined;
+
 function setCurrentMessage(newMessage: string, newRecipient: string) {
-  currentMessage = newMessage;
-  recipient = newRecipient;
+	currentMessage = newMessage;
+	recipient = newRecipient;
 }
+
+function setCurrentQuiz(question: string, answer: string, type: string){
+	currentMessage = question;
+	currentQuiz = question;
+	currentQuizAnswer = answer;
+	currentQuizType = type;
+}
+
 
 const createHandler = (initPrompt: string) => {
 	const handler: vscode.ChatRequestHandler = async (
@@ -41,12 +54,19 @@ const createHandler = (initPrompt: string) => {
 
 			return;
 		}
+		else if(request.command === 'answer'){
+			const answerContent = request.prompt;
+			console.log('answerContent', answerContent);
+			// await sendServerQuestion('answer', answerContent);
+			await sendServerAnswer(currentQuiz!, currentQuizAnswer!, currentQuizType!, answerContent);
+			stream.markdown(`Thank yoou! Your answer has been sent to the instructor.`);
+		}
 		return;
 	};
 	return handler;
 };
 
-export {setCurrentMessage};
+export {setCurrentMessage, setCurrentQuiz};
 
 const humanInstructorHandler = createHandler(BASE_PROMPT);
 export default humanInstructorHandler;

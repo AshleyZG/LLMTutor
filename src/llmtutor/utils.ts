@@ -44,3 +44,35 @@ export async function sendServerQuestion(sender: string, serverQuestion: string)
         timestamp: Date.now(),
     });
 }
+
+export async function sendServerAnswer(question: string, answer: string, studentAnswer: string, type: string) {
+    SocketService.getInstance().sendMessage('answer', {
+        id: vscode.env.machineId,
+        question: question,
+        type: type,
+        answer: answer,
+        studentAnswer: studentAnswer,
+    });
+}
+
+export function calculateContributor(event: any) {
+    // calculate the contributor of an edit event
+    
+    // if the edit event insert a big part of the code, it's likely to be AI-generated
+    console.log(event.operation, event.value.length);
+    if (event.eventName !== 'DocumentChangeEvent') {
+        return null; // Not a document change event
+    }
+
+    if ((event.operation === 'add' || event.operation === 'replace') && event.value.length > 1) {
+        console.log('AI-generated code detected');
+        return 'AI'; 
+    }
+
+    // TODO:
+    // otherwise, compare the edit event with the previous AI-generated code
+    // if the edit event is similar to the previous AI-generated code, it's likely to be AI-generated.
+    // of if the the edit event is close enough to the last AI message, it's likely to be AI-generated.
+    console.log('TODO: calculate the contributor of every keystroke--------');
+    return 'student';
+}

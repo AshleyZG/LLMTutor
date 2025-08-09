@@ -7,6 +7,8 @@ import { ProgressMonitor } from './progressMonitor';
 import { popUpWindowQuestions } from './windowQuestions';
 import { RecordingState } from './recording';
 
+// import './vscode.proposed.inlineCompletionsAdditions';
+
 // Load environment variables from .env file
 import * as path from 'path';
 
@@ -21,6 +23,7 @@ try {
   console.log('Loaded environment variables:', relevantEnv);
 } catch (e) {
   // dotenv not installed or .env not found, ignore
+  console.log('envPath not found');
 }
 
 const config = vscode.workspace.getConfiguration('llmtutor');
@@ -161,6 +164,31 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push({
         dispose: () => progressMonitor.stop(),
     });
+
+	const selector: vscode.DocumentSelector = { scheme: 'file', language: '*' };
+
+	const copyPasteProvider: any = { // it should return vscode.DocumentPasteEditProvider, but it's not working. TODO: fix this.
+	  // Fires **after a copy/cut**. You can add metadata or just log.
+	  async prepareDocumentPaste(doc: vscode.TextDocument, _ranges: vscode.Range[], _dataTransfer: vscode.DataTransfer) {
+		console.log('COPY from', doc.uri.fsPath);
+	  },
+  
+	  // Fires **on every paste** into an editor your selector matches.
+	  async provideDocumentPasteEdits(doc: vscode.TextDocument, _ranges: vscode.Range[], _dataTransfer: vscode.DataTransfer, _context: any) {
+		console.log('PASTE into', doc.uri.fsPath);
+		return undefined;          // return edits if you want to modify the paste
+	  }
+	};
+  
+	context.subscriptions.push(
+	  (vscode.languages as any).registerDocumentPasteEditProvider(
+		selector,
+		copyPasteProvider,
+		{ pasteMimeTypes: ['text/plain'] }      // handle plain‑text pastes
+	  )
+	);
+
+
 }
 
 

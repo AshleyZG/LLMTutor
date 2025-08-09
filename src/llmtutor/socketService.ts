@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { io, Socket } from 'socket.io-client';
-import { setCurrentMessage } from './humanInstructor';
+import { setCurrentMessage, setCurrentQuiz } from './humanInstructor';
 import { popUpInstructorQuestion } from './windowQuestions';
 
 const config = vscode.workspace.getConfiguration('llmtutor');
@@ -62,9 +62,15 @@ export default class SocketService {
             setCurrentMessage(data.question, data.recipient);
             popUpInstructorQuestion();
         });
+
+        this.socket.on('quiz', (data) => {
+            console.log('Quiz received:', data);
+            setCurrentQuiz(data.question, data.answer, data.type);
+            popUpInstructorQuestion();
+        });
     }
 
-    public sendMessage(event: 'chat' | 'edit', data: any) {
+    public sendMessage(event: 'chat' | 'edit' | 'answer', data: any) {
         if (!this.socket.connected) {
             console.warn('⚠️ Socket not connected. Attempting to reconnect...');
             this.socket.connect();

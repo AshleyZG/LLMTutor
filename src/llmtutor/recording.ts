@@ -31,6 +31,7 @@ export class RecordingState {
     }
 
     public set recordingFolder(value: string) {
+        console.log('set recording folder, ', value);
         this._recordingFolder = value;
     }
 

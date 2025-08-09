@@ -122,6 +122,10 @@
           {
             "name": "read",
             "description": "Read the current message from human"
+          },
+          {
+            "name": "answer",
+            "description": "Answer the question"
           }
         ]
       }
@@ -141,6 +145,7 @@
     "@types/vscode": "^1.95.0",
     "@typescript-eslint/eslint-plugin": "^8.10.0",
     "@typescript-eslint/parser": "^8.7.0",
+    "@vscode/dts": "^0.4.1",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.13.0",
@@ -155,7 +160,7 @@
   "dependencies": {
     "@vscode/chat-extension-utils": "^0.0.0-alpha.5",
     "axios": "^1.7.9",
-    "socket.io-client": "^4.8.1",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "socket.io-client": "^4.8.1"
   }
 }

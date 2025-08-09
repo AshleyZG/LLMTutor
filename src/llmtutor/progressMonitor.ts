@@ -4,6 +4,7 @@ import { addObserver, removeObserver } from '../telemetry/exporters';
 import { EventData } from '../telemetry/types';
 import SocketService from './socketService';
 import { RecordingState } from './recording';
+import { calculateContributor } from './utils';
 
 // This is for chat participant to proactively sent a message to the user when they have not progressed in the last 5 minutes
 export class ProgressMonitor {
@@ -68,10 +69,14 @@ export class ProgressMonitor {
         try {
             const socketService = SocketService.getInstance();
             const currentCode = vscode.window.activeTextEditor?.document.getText();
+
+            const contributor = calculateContributor(event);
+            console.log(`Contributor: ${contributor}`);
             const messageData = {
                 id: vscode.env.machineId,
                 edits: event,
-                code: currentCode
+                code: currentCode,
+                contributor: contributor, // TODO: add a contributor field to the message data
             };
 
             if (!socketService.isConnected()) {
@@ -97,6 +102,9 @@ export class ProgressMonitor {
         // Once event publish from telemetry, we will add it to the edits observable, and send it to the central server
         this.edits.value = [...this.edits.value, event];
         this.sendEditToServer(event);
+
+        // TODO: for each edit event, decide if it's AI-generated code
+        console.log(`TODO: for every keystroke, decide if it\'s AI-generated code`);
     }
 
     // This method is to trigger proactive feedback from the LLM tutor
