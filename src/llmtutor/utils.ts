@@ -45,9 +45,10 @@ export async function sendServerQuestion(sender: string, serverQuestion: string)
     });
 }
 
-export async function sendServerAnswer(question: string, answer: string, studentAnswer: string, type: string) {
+export async function sendServerAnswer(quizID: string, question: string, answer: string, studentAnswer: string, type: string) {
     SocketService.getInstance().sendMessage('answer', {
         id: vscode.env.machineId,
+        quizID: quizID,
         question: question,
         type: type,
         answer: answer,

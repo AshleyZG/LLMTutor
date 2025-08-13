@@ -65,8 +65,15 @@ export default class SocketService {
 
         this.socket.on('quiz', (data) => {
             console.log('Quiz received:', data);
-            setCurrentQuiz(data.question, data.answer, data.type);
+            setCurrentQuiz(data.question, data.answer, data.type, data.quizID);
             popUpInstructorQuestion();
+        });
+
+        this.socket.on('answer_feedback', (data) => {
+            console.log('Answer feedback received:', data);
+            console.log('TODO: show the answer feedback in the chat panel');
+            // TODO: add visual cues in the viz to indicate the correctness of the answer, and # of attempts to answer the question
+            // TODO: show up the answer in student's chat panel
         });
     }
 

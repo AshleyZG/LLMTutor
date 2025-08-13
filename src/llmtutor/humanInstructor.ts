@@ -11,6 +11,7 @@ let currentMessage = ``;
 let recipient: string | undefined = undefined;
 
 let currentQuiz: string | undefined = undefined;
+let currentQuizID: string | undefined = undefined;
 let currentQuizAnswer: string | undefined = undefined;
 let currentQuizType: string | undefined = undefined;
 
@@ -19,11 +20,12 @@ function setCurrentMessage(newMessage: string, newRecipient: string) {
 	recipient = newRecipient;
 }
 
-function setCurrentQuiz(question: string, answer: string, type: string){
+function setCurrentQuiz(question: string, answer: string, type: string, quizID: string){
 	currentMessage = question;
 	currentQuiz = question;
 	currentQuizAnswer = answer;
 	currentQuizType = type;
+	currentQuizID = quizID;
 }
 
 
@@ -58,7 +60,7 @@ const createHandler = (initPrompt: string) => {
 			const answerContent = request.prompt;
 			console.log('answerContent', answerContent);
 			// await sendServerQuestion('answer', answerContent);
-			await sendServerAnswer(currentQuiz!, currentQuizAnswer!, currentQuizType!, answerContent);
+			await sendServerAnswer(currentQuizID!, currentQuiz!, currentQuizAnswer!, answerContent, currentQuizType!,);
 			stream.markdown(`Thank yoou! Your answer has been sent to the instructor.`);
 		}
 		return;
