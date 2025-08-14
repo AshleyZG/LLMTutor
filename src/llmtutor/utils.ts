@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import SocketService from './socketService';
+import { EditTrackingState } from './editTrackingState';
 
 export function getVisibleCodeWithLineNumbers(textEditor: vscode.TextEditor) {
 	// get the position of the first and last visible lines
@@ -57,23 +58,36 @@ export async function sendServerAnswer(quizID: string, question: string, answer:
 }
 
 export function calculateContributor(event: any) {
-    // calculate the contributor of an edit event
-    
-    // if the edit event insert a big part of the code, it's likely to be AI-generated
-    console.log(event.operation, event.value.length);
     if (event.eventName !== 'DocumentChangeEvent') {
-        return null; // Not a document change event
+        return null;
     }
 
-    if ((event.operation === 'add' || event.operation === 'replace') && event.value.length > 1) {
-        console.log('AI-generated code detected');
-        return 'AI'; 
+    const editTrackingState = EditTrackingState.getInstance();
+    const matches = editTrackingState.matchEditWithTrackedEvents(event);
+    
+    // Check for copy-paste match
+    if (matches.copyPasteMatch) {
+        console.log('Copy-paste event detected with content:', matches.copyPasteMatch.content.substring(0, 100) + '...');
+        return 'copy-paste';
+    }
+    
+    // Check for autocomplete match
+    if (matches.autocompleteMatch) {
+        console.log('Autocomplete event detected');
+        return 'autocomplete';
+    }
+    
+    // Check for AI typing match (most specific)
+    if (matches.aiTypingMatch) {
+        console.log('AI-generated code being manually typed detected');
+        return 'AI-typing';
+    }
+    
+    // Check for AI message match (fallback)
+    if (matches.aiMessageMatch) {
+        console.log('AI-generated code detected from recent AI message');
+        return 'AI';
     }
 
-    // TODO:
-    // otherwise, compare the edit event with the previous AI-generated code
-    // if the edit event is similar to the previous AI-generated code, it's likely to be AI-generated.
-    // of if the the edit event is close enough to the last AI message, it's likely to be AI-generated.
-    console.log('TODO: calculate the contributor of every keystroke--------');
     return 'student';
 }

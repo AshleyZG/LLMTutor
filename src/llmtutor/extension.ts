@@ -6,6 +6,7 @@ import humanInstructorHandler from './humanInstructor';
 import { ProgressMonitor } from './progressMonitor';
 import { popUpWindowQuestions } from './windowQuestions';
 import { RecordingState } from './recording';
+import { EditTrackingState } from './editTrackingState';
 
 // import './vscode.proposed.inlineCompletionsAdditions';
 
@@ -31,6 +32,8 @@ const config = vscode.workspace.getConfiguration('llmtutor');
 const recordingState = RecordingState.getInstance();
 recordingState.isRecording = false;
 recordingState.recordingFolder = process.env.RECORDING_FOLDER_URL || (config.get('recordingFolderUrl') as string);
+
+const editTrackingState = EditTrackingState.getInstance();
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -167,16 +170,42 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const selector: vscode.DocumentSelector = { scheme: 'file', language: '*' };
 
-	const copyPasteProvider: any = { // it should return vscode.DocumentPasteEditProvider, but it's not working. TODO: fix this.
+	const copyPasteProvider: any = {
 	  // Fires **after a copy/cut**. You can add metadata or just log.
-	  async prepareDocumentPaste(doc: vscode.TextDocument, _ranges: vscode.Range[], _dataTransfer: vscode.DataTransfer) {
+	  async prepareDocumentPaste(doc: vscode.TextDocument, _ranges: vscode.Range[], dataTransfer: vscode.DataTransfer) {
 		console.log('COPY from', doc.uri.fsPath);
+		
+		// Get clipboard content
+		const clipboardItem = dataTransfer.get('text/plain');
+		if (clipboardItem) {
+		  clipboardItem.asString().then((content: string) => {
+			editTrackingState.setClipboardContent(content);
+			console.log('Clipboard content captured:', content.substring(0, 100) + '...');
+		  });
+		}
 	  },
   
 	  // Fires **on every paste** into an editor your selector matches.
-	  async provideDocumentPasteEdits(doc: vscode.TextDocument, _ranges: vscode.Range[], _dataTransfer: vscode.DataTransfer, _context: any) {
+	  async provideDocumentPasteEdits(doc: vscode.TextDocument, ranges: vscode.Range[], dataTransfer: vscode.DataTransfer, _context: any) {
 		console.log('PASTE into', doc.uri.fsPath);
-		return undefined;          // return edits if you want to modify the paste
+		
+		// Get the pasted content
+		const clipboardItem = dataTransfer.get('text/plain');
+		if (clipboardItem) {
+		  clipboardItem.asString().then((content: string) => {
+			const pasteEvent = {
+			  timestamp: Date.now(),
+			  content: content,
+			  documentUri: doc.uri.toString(),
+			  range: ranges[0] // Use the first range
+			};
+			
+			editTrackingState.addCopyPasteEvent(pasteEvent);
+			console.log('Paste event tracked with content:', content.substring(0, 100) + '...');
+		  });
+		}
+		
+		return undefined;
 	  }
 	};
   
@@ -188,6 +217,66 @@ export function activate(context: vscode.ExtensionContext) {
 	  )
 	);
 
+	// Track undo/redo operations
+	let isUndoRedoOperation = false;
+
+	// Listen for undo/redo commands
+	context.subscriptions.push(
+	    vscode.commands.registerCommand('undo', () => {
+	        isUndoRedoOperation = true;
+	        setTimeout(() => { isUndoRedoOperation = false; }, 100); // Reset after 100ms
+	        return vscode.commands.executeCommand('default:undo');
+	    })
+	);
+
+	context.subscriptions.push(
+	    vscode.commands.registerCommand('redo', () => {
+	        isUndoRedoOperation = true;
+	        setTimeout(() => { isUndoRedoOperation = false; }, 100); // Reset after 100ms
+	        return vscode.commands.executeCommand('default:redo');
+	    })
+	);
+
+	// Add Tab key tracking for inline autocomplete
+	context.subscriptions.push(
+	    vscode.workspace.onDidChangeTextDocument((e) => {
+	        if (e.contentChanges.length > 0) {
+	            const change = e.contentChanges[0];
+	            
+	            // Track single character keystrokes
+	            if (change.text.length === 1) {
+					const editTrackingState = EditTrackingState.getInstance();
+	                
+	                // Get line information from the change
+	                const lineNumber = e.document.lineAt(change.range.start.line).lineNumber;
+	                const lineContent = e.document.lineAt(change.range.start.line).text;
+	                
+	                editTrackingState.addKeystroke(
+	                    change.text,
+	                    change.rangeOffset,
+	                    e.document.uri.toString(),
+	                    lineNumber,
+	                    lineContent
+	                );
+	            }
+	            
+	            // Track Tab-accepted autocomplete (multiple characters inserted/replaced)
+	            // Exclude undo/redo operations
+	            if (change.text.trim() !== '' && 
+	                change.text.length > 1 && 
+	                !isUndoRedoOperation) {
+	                
+	                const editTrackingState = EditTrackingState.getInstance();
+	                editTrackingState.addPotentialAutocomplete({
+	                    timestamp: Date.now(),
+	                    content: change.text,
+	                    documentUri: e.document.uri.toString(),
+	                    range: change.range
+	                });
+	            }
+	        }
+	    })
+	);
 
 }
 

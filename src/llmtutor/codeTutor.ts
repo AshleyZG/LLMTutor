@@ -3,6 +3,7 @@ import { sendServerQuestion } from './utils';
 import ChatService from './chatService';
 import { ToolUserPrompt } from './history';
 import { renderPrompt } from '@vscode/prompt-tsx';
+import { EditTrackingState } from './editTrackingState';
 
 // This is for chat participant (tutor)
 const BASE_PROMPT =
@@ -108,6 +109,15 @@ const createHandler = (initPrompt: string) => {
 			console.log('Found code snippets:', codeSnippets);
 			// You can send this to your server
 			await sendServerQuestion('code_snippets', JSON.stringify(codeSnippets));
+			
+			// Update AI tracking state
+			const editTrackingState = EditTrackingState.getInstance();
+			const aiMessageEvent = {
+				timestamp: Date.now(),
+				codeSnippets: codeSnippets.map(snippet => snippet.code),
+				documentUri: vscode.window.activeTextEditor?.document.uri.toString()
+			};
+			editTrackingState.addAIMessageEvent(aiMessageEvent);
 		}
 
 		// Send the complete markdown response to the server

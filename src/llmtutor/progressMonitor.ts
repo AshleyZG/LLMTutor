@@ -5,6 +5,7 @@ import { EventData } from '../telemetry/types';
 import SocketService from './socketService';
 import { RecordingState } from './recording';
 import { calculateContributor } from './utils';
+import { EditTrackingState } from './editTrackingState';
 
 // This is for chat participant to proactively sent a message to the user when they have not progressed in the last 5 minutes
 export class ProgressMonitor {
@@ -69,14 +70,26 @@ export class ProgressMonitor {
         try {
             const socketService = SocketService.getInstance();
             const currentCode = vscode.window.activeTextEditor?.document.getText();
+            const editTrackingState = EditTrackingState.getInstance();
 
             const contributor = calculateContributor(event);
             console.log(`Contributor: ${contributor}`);
+            
+            // Get additional context from tracked events
+            const matches = editTrackingState.matchEditWithTrackedEvents(event);
+            
             const messageData = {
                 id: vscode.env.machineId,
                 edits: event,
                 code: currentCode,
-                contributor: contributor, // TODO: add a contributor field to the message data
+                contributor: contributor,
+                // Add additional context
+                context: {
+                    copyPasteContent: matches.copyPasteMatch?.content,
+                    autocompleteContent: matches.autocompleteMatch?.content,
+                    aiMessageSnippets: matches.aiMessageMatch?.codeSnippets,
+                    clipboardContent: editTrackingState.getClipboardContent()
+                }
             };
 
             if (!socketService.isConnected()) {
@@ -90,7 +103,9 @@ export class ProgressMonitor {
             this.recordingState.appendRecordingData(messageData);
             console.log('✅ Edit data sent successfully');
 
-            // Replace the existing pending messages loop with the new method
+            // Cleanup old events periodically
+            editTrackingState.cleanupOldEvents();
+
             await this.processPendingMessages();
         } catch (error: any) {
             console.error('❌ Failed to send edit data:', error.message);
