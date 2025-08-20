@@ -22,11 +22,9 @@ export class ProgressMonitor {
     private _pendingMessages: Array<{event: 'chat' | 'edit', data: any}> = [];
 
     constructor() {
-        this.monitorEditsStatus = this.monitorEditsStatus.bind(this);
         this.handleEvent = this.handleEvent.bind(this);
         this.processPendingMessages = this.processPendingMessages.bind(this);
 
-        this.edits.subscribe(this.monitorEditsStatus);
         addObserver(this.handleEvent);
         
         // Add socket reconnection handler
@@ -34,16 +32,6 @@ export class ProgressMonitor {
         socketService.onReconnect(this.processPendingMessages);
     }
 
-    private monitorEditsStatus(newValue: any, oldValue: any){
-        if (this._timeout){
-            clearTimeout(this._timeout);
-        }
-        if (this._status === 'on'){
-            console.log('edits change observed.'); 
-            this._hasTriggered = false;
-            this._timeout = setTimeout(this.proactiveTrigger, this._strugglingInterval);    
-        }
-    }
 
     private async processPendingMessages() {
         const socketService = SocketService.getInstance();
@@ -121,15 +109,6 @@ export class ProgressMonitor {
         // TODO: for each edit event, decide if it's AI-generated code
         console.log(`TODO: for every keystroke, decide if it\'s AI-generated code`);
     }
-
-    // This method is to trigger proactive feedback from the LLM tutor
-    async proactiveTrigger() {
-        if (!this._hasTriggered) {
-            this._hasTriggered = true;
-            await vscode.commands.executeCommand('llmtutor.promptQuestion');
-        }
-    };
-
 
 
     async start() {

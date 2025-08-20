@@ -4,11 +4,9 @@ import * as vscode from 'vscode';
 import codeTutorHandler from './codeTutor';
 import humanInstructorHandler from './humanInstructor';
 import { ProgressMonitor } from './progressMonitor';
-import { popUpWindowQuestions } from './windowQuestions';
 import { RecordingState } from './recording';
 import { EditTrackingState } from './editTrackingState';
 
-// import './vscode.proposed.inlineCompletionsAdditions';
 
 // Load environment variables from .env file
 import * as path from 'path';
@@ -109,10 +107,6 @@ export function activate(context: vscode.ExtensionContext) {
 		console.log('testing********************************');
 	});
 
-	const disposableProactiveTrigger = vscode.commands.registerTextEditorCommand('llmtutor.promptQuestion', async (textEditor: vscode.TextEditor) => {
-		// Show window messages for potential questions
-		popUpWindowQuestions(textEditor);
-	});
 
 	const promptTutorFromInstructor = vscode.commands.registerCommand('llmtutor.promptTutorFromInstructor', async () => {
 		vscode.commands.executeCommand('workbench.action.chat.open', { query: '@tutor what did instructor just send?' });
@@ -162,7 +156,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(recordingCommand);
 
 	context.subscriptions.push(disposable);
-	context.subscriptions.push(disposableProactiveTrigger);
 	context.subscriptions.push(promptTutorFromInstructor);
 	context.subscriptions.push({
         dispose: () => progressMonitor.stop(),

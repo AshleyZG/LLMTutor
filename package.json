@@ -67,10 +67,6 @@
         "icon": "$(comment)"
       },
       {
-        "command": "llmtutor.promptQuestion",
-        "title": "Prompt Question"
-      },
-      {
         "command": "llmtutor.promptTutorFromInstructor",
         "title": "Prompt Tutor From Instructor"
       },
