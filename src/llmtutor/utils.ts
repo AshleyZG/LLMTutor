@@ -1,6 +1,9 @@
 import * as vscode from "vscode";
 import SocketService from './socketService';
 import { EditTrackingState } from './editTrackingState';
+import { RecordingState } from './recording';
+
+const recordingState = RecordingState.getInstance();
 
 export function getVisibleCodeWithLineNumbers(textEditor: vscode.TextEditor) {
 	// get the position of the first and last visible lines
@@ -38,23 +41,28 @@ export function getVisibleCodeWithLineNumbers(textEditor: vscode.TextEditor) {
 
 
 export async function sendServerQuestion(sender: string, serverQuestion: string) {
-    SocketService.getInstance().sendMessage('chat', {
+    const messageData = {
         id: vscode.env.machineId,
         sender: sender,
         question: serverQuestion,
         timestamp: Date.now(),
-    });
+    };
+    SocketService.getInstance().sendMessage('chat', messageData);
+    recordingState.appendRecordingData({'type': 'chat', 'data': messageData});
+
 }
 
 export async function sendServerAnswer(quizID: string, question: string, answer: string, studentAnswer: string, type: string) {
-    SocketService.getInstance().sendMessage('answer', {
+    const messageData = {
         id: vscode.env.machineId,
         quizID: quizID,
         question: question,
         type: type,
         answer: answer,
         studentAnswer: studentAnswer,
-    });
+    };
+    SocketService.getInstance().sendMessage('answer', messageData);
+    recordingState.appendRecordingData({'type': 'answer', 'data': messageData});
 }
 
 export function calculateContributor(event: any) {

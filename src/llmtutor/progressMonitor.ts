@@ -41,7 +41,7 @@ export class ProgressMonitor {
                 try {
                     socketService.sendMessage(pendingMessage.event, pendingMessage.data);
                     if (pendingMessage.event === 'edit'){
-                        this.recordingState.appendRecordingData(pendingMessage.data);
+                        this.recordingState.appendRecordingData({'type': 'edit', 'data': pendingMessage.data});
                     }
                     console.log('✅ Pending message sent successfully');
                 } catch (error: any) {
@@ -88,7 +88,7 @@ export class ProgressMonitor {
 
             console.log('Sending edit data through Socket.IO...');
             socketService.sendMessage('edit', messageData);
-            this.recordingState.appendRecordingData(messageData);
+            this.recordingState.appendRecordingData({'type': 'edit', 'data': messageData});
             console.log('✅ Edit data sent successfully');
 
             // Cleanup old events periodically
